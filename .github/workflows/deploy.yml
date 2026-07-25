@@ -18,9 +18,11 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      # Build first: the workers-pool tests and the dry-run both read
+      # wrangler.toml's [assets] directory (./dist), which must exist.
+      - run: npm run build
       - run: npm test
       - run: npm run test:workers
-      - run: npm run build
       - name: Validate Worker (dry-run, no deploy)
         run: npx wrangler deploy --dry-run
 
