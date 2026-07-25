@@ -16,13 +16,16 @@ body { margin: 0; font-family: system-ui, sans-serif; background: #0b0b0b; color
 .lobby { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
 .lobby__code { font-family: ui-monospace, monospace; letter-spacing: 3px; color: #7fd88a; }
 .lobby__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 16px; }
-.lane-card { border: 1px solid #333; border-radius: 8px; padding: 12px; background: #151515; display: grid; gap: 8px; }
+.lane-card { border: 1px solid #333; border-radius: 8px; padding: 12px; background: #151515; display: grid; gap: 8px; min-width: 0; }
 .lane-card--yours { border-color: #2f7d32; }
 .lane-card--filled { border-color: #3a5; }
 .lane-card__img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; }
-.lane-form { display: grid; gap: 8px; }
+.lane-form { display: grid; gap: 8px; min-width: 0; }
+/* Inputs must be allowed to shrink (min-width:0) or their intrinsic size
+   overflows the lane card. */
+.lane-form .input { width: 100%; min-width: 0; }
 .lane-form__image { display: flex; align-items: center; gap: 8px; }
-.lane-form__image .input { flex: 1; min-width: 0; }
+.lane-form__image .input { flex: 1; }
 .lane-form__thumb { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; flex: none; background: #222; }
 .lane-form__row { display: flex; gap: 8px; }
 .lane-form__err { color: #ff6b6b; font-size: 12px; margin: 0; }
