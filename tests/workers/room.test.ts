@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { env } from "cloudflare:test";
+import { env, runInDurableObject } from "cloudflare:test";
 import type { ServerMessage } from "../../src/shared/protocol";
 
 // Helper: open a WS to a room and collect server messages.
@@ -47,5 +47,45 @@ describe("RaceRoom", () => {
       expect(start.script.finishOrder).toHaveLength(12);
       expect(start.startAt).toBeGreaterThan(Date.now());
     }
+  });
+
+  it("rejects start_race from a non-host and sends an error, no race_start", async () => {
+    const host = await connect("ROOMNH");
+    await nextTick();
+    const guest = await connect("ROOMNH");
+    await nextTick();
+    guest.ws.send(JSON.stringify({ type: "start_race" }));
+    await nextTick();
+    expect(guest.inbox.find((m) => m.type === "race_start")).toBeFalsy();
+    expect(guest.inbox.find((m) => m.type === "error")).toBeTruthy();
+    void host;
+  });
+
+  it("does not start for the host until all lanes are filled", async () => {
+    const { ws, inbox } = await connect("ROOMUF");
+    await nextTick();
+    ws.send(JSON.stringify({ type: "claim_lane", lane: 0 }));
+    ws.send(JSON.stringify({
+      type: "submit_horse", lane: 0, horseName: "H", personName: "P", image: "data:image/x",
+    }));
+    await nextTick();
+    ws.send(JSON.stringify({ type: "start_race" }));
+    await nextTick();
+    expect(inbox.find((m) => m.type === "race_start")).toBeFalsy();
+    expect(inbox.find((m) => m.type === "error")).toBeTruthy();
+  });
+
+  it("persists room state to storage after a claim", async () => {
+    const { ws } = await connect("ROOMPS");
+    await nextTick();
+    ws.send(JSON.stringify({ type: "claim_lane", lane: 3 }));
+    await nextTick();
+    const id = env.RACE_ROOM.idFromName("ROOMPS");
+    const stub = env.RACE_ROOM.get(id);
+    const stored = await runInDurableObject(stub, async (_instance, state) => {
+      return state.storage.get("room");
+    });
+    expect(stored).toBeTruthy();
+    expect((stored as { lanes: { claimedBy: string | null }[] }).lanes[3].claimedBy).toBeTruthy();
   });
 });

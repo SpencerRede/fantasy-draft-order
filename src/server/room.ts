@@ -23,11 +23,15 @@ export class RaceRoom extends DurableObject {
   constructor(ctx: DurableObjectState, env: Cloudflare.Env) {
     super(ctx, env);
     this.room = initialRoomState();
-    // Re-register connection ids for any sockets that survived hibernation.
-    for (const ws of this.ctx.getWebSockets()) {
-      const att = ws.deserializeAttachment() as Attachment | null;
-      if (att?.id) this.room = addConnection(this.room, att.id);
-    }
+    this.ctx.blockConcurrencyWhile(async () => {
+      const stored = await this.ctx.storage.get<RoomState>("room");
+      if (stored) this.room = stored;
+      // Re-register connection ids for any sockets that survived hibernation.
+      for (const ws of this.ctx.getWebSockets()) {
+        const att = ws.deserializeAttachment() as Attachment | null;
+        if (att?.id) this.room = addConnection(this.room, att.id);
+      }
+    });
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -41,6 +45,7 @@ export class RaceRoom extends DurableObject {
     this.ctx.acceptWebSocket(server);
 
     this.room = addConnection(this.room, id);
+    this.persist();
     this.broadcast();
 
     return new Response(null, { status: 101, webSocket: client });
@@ -74,12 +79,14 @@ export class RaceRoom extends DurableObject {
         if (res.error) { error = res.error; break; }
         this.room = res.state;
         const script = simulate(Date.now());
+        this.persist();
         this.broadcast();
         this.broadcastRaw({ type: "race_start", script, startAt: Date.now() + COUNTDOWN_MS });
         return;
       }
     }
     if (error) return this.sendTo(ws, { type: "error", message: error });
+    this.persist();
     this.broadcast();
   }
 
@@ -87,6 +94,7 @@ export class RaceRoom extends DurableObject {
     const att = ws.deserializeAttachment() as Attachment | null;
     if (att) {
       this.room = removeConnection(this.room, att.id);
+      this.persist();
       this.broadcast();
     }
   }
@@ -94,6 +102,10 @@ export class RaceRoom extends DurableObject {
   private apply(res: { state: RoomState; error?: string }): { error?: string } {
     if (!res.error) this.room = res.state;
     return { error: res.error };
+  }
+
+  private persist(): void {
+    void this.ctx.storage.put("room", this.room);
   }
 
   private broadcast(): void {
