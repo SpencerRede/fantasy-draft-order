@@ -1,1 +1,47 @@
-body { margin: 0; font-family: system-ui, sans-serif; background: #0b0b0b; color: #fff; }
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: #0b0b0b; color: #f5f5f5; }
+.btn { padding: 8px 14px; border: 1px solid #444; background: #1b1b1b; color: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.btn:hover { background: #262626; }
+.btn--primary { background: #2f7d32; border-color: #2f7d32; font-weight: 600; }
+.btn:disabled { opacity: .5; cursor: default; }
+.input { padding: 8px 10px; border: 1px solid #444; background: #141414; color: #fff; border-radius: 6px; font-size: 14px; }
+
+/* Landing */
+.landing { max-width: 420px; margin: 12vh auto; text-align: center; display: grid; gap: 16px; }
+.landing__title { font-size: 32px; }
+.landing__join { display: flex; gap: 8px; justify-content: center; }
+
+/* Lobby */
+.lobby { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+.lobby__code { font-family: ui-monospace, monospace; letter-spacing: 3px; color: #7fd88a; }
+.lobby__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 16px; }
+.lane-card { border: 1px solid #333; border-radius: 8px; padding: 12px; background: #151515; display: grid; gap: 8px; }
+.lane-card--yours { border-color: #2f7d32; }
+.lane-card--filled { border-color: #3a5; }
+.lane-card__img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; }
+.lane-form { display: grid; gap: 8px; }
+.lane-form__row { display: flex; gap: 8px; }
+.lane-form__err { color: #ff6b6b; font-size: 12px; margin: 0; }
+.lobby__actions { margin-top: 20px; text-align: center; }
+
+/* Race screen: left 3/4 track, right 1/4 results */
+.race-screen { display: grid; grid-template-columns: 3fr 1fr; height: 100vh; }
+.race-screen__track { position: relative; }
+.race-screen__track canvas { display: block; width: 100%; height: 100%; }
+.race-screen__results { border-left: 1px solid #333; padding: 16px; overflow-y: auto; background: #101010; }
+.results__title { margin-top: 0; }
+.results__list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.results__row { display: flex; align-items: center; gap: 8px; }
+.results__rank { width: 22px; font-weight: 700; color: #7fd88a; }
+.results__img { width: 28px; height: 28px; border-radius: 5px; object-fit: cover; }
+.results__names { display: grid; }
+.results__horse { font-weight: 600; }
+.results__person { font-size: 12px; color: #aaa; }
+
+/* Countdown overlay */
+.countdown { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; font-size: 120px; font-weight: 800; color: #fff; background: rgba(0,0,0,.45); }
+.countdown--active { display: flex; }
+
+/* Toast */
+.toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #a33; color: #fff; padding: 8px 14px; border-radius: 6px; }
