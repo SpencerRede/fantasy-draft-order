@@ -1,17 +1,14 @@
 import type { Horse } from "../shared/protocol";
 
-let cryptoApi: Crypto;
-if (typeof globalThis !== "undefined" && globalThis.crypto) {
-  cryptoApi = globalThis.crypto;
-} else if (typeof global !== "undefined") {
-  // Node.js
-  cryptoApi = (global as any).crypto || require("crypto").webcrypto;
+// Polyfill crypto for Node.js environments
+if (typeof crypto === "undefined" && typeof global !== "undefined") {
+  (global as any).crypto = require("crypto").webcrypto;
 }
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
 
 export function generateRoomCode(): string {
-  const bytes = cryptoApi.getRandomValues(new Uint8Array(4));
+  const bytes = crypto.getRandomValues(new Uint8Array(4));
   return Array.from(bytes, (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join("");
 }
 
@@ -41,7 +38,7 @@ export function renderResults(
     li.className = "results__row";
     li.innerHTML = `
       <span class="results__rank">${rank}</span>
-      ${horse.image ? `<img class="results__img" src="${horse.image}" alt="" />` : ""}
+      ${horse.image ? `<img class="results__img" src="${escapeHtml(horse.image)}" alt="" />` : ""}
       <span class="results__names">
         <span class="results__horse">${escapeHtml(horse.horseName)}</span>
         <span class="results__person">${escapeHtml(horse.personName)}</span>
