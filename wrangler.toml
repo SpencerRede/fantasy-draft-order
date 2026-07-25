@@ -1,4 +1,4 @@
-name = "draft-order-race"
+name = "fantasy-draft-order"
 main = "src/server/index.ts"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
@@ -11,6 +11,9 @@ binding = "ASSETS"
 name = "RACE_ROOM"
 class_name = "RaceRoom"
 
+# Durable Objects on the free plan require the SQLite storage backend, so the
+# class must be created with new_sqlite_classes. The ctx.storage KV API we use
+# works unchanged on this backend.
 [[migrations]]
 tag = "v1"
-new_classes = ["RaceRoom"]
+new_sqlite_classes = ["RaceRoom"]
