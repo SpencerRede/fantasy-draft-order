@@ -30,10 +30,47 @@ describe("simulate", () => {
     totals.forEach((t) => expect(t).toBeGreaterThanOrEqual(TRACK_LENGTH_UNITS));
   });
 
-  it("tie-breaks a same-round finish by larger overshoot then lower lane", () => {
-    // Hand-built script: lanes 0 and 1 both cross on the final round.
-    // Lane 1 overshoots more, so it must rank ahead of lane 0.
-    const { finishOrder } = simulate(0, 2);
-    expect(new Set(finishOrder)).toEqual(new Set([0, 1]));
+  it("orders same-round finishers by larger overshoot then lower lane index", () => {
+    // Scan seeds for races where >=2 lanes finish in the same round, then verify
+    // that round's finisher segment in finishOrder is sorted by
+    // (overshoot desc, lane asc). Reconstructs overshoots from the race script.
+    let tiesExercised = 0;
+    for (let seed = 1; seed <= 400 && tiesExercised < 5; seed++) {
+      const { rounds, finishOrder } = simulate(seed);
+      const laneCount = rounds[0].length;
+
+      const pos = new Array(laneCount).fill(0);
+      const finishRound = new Array(laneCount).fill(-1);
+      const overshoot = new Array(laneCount).fill(0);
+      for (let r = 0; r < rounds.length; r++) {
+        for (let lane = 0; lane < laneCount; lane++) {
+          if (finishRound[lane] !== -1) continue;
+          pos[lane] += rounds[r][lane];
+          if (pos[lane] >= TRACK_LENGTH_UNITS) {
+            finishRound[lane] = r;
+            overshoot[lane] = pos[lane] - TRACK_LENGTH_UNITS;
+          }
+        }
+      }
+
+      // Group lanes by the round they finished, preserving finishOrder sequence.
+      const byRound = new Map<number, number[]>();
+      for (const lane of finishOrder) {
+        const r = finishRound[lane];
+        const arr = byRound.get(r) ?? [];
+        arr.push(lane);
+        byRound.set(r, arr);
+      }
+
+      for (const lanes of byRound.values()) {
+        if (lanes.length < 2) continue;
+        tiesExercised++;
+        const expected = [...lanes].sort(
+          (a, b) => overshoot[b] - overshoot[a] || a - b
+        );
+        expect(lanes).toEqual(expected);
+      }
+    }
+    expect(tiesExercised).toBeGreaterThan(0); // guard: we actually hit a tie
   });
 });
