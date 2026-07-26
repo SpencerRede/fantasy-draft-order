@@ -1,7 +1,7 @@
 import type { Horse } from "../shared/protocol";
 import { computeRaceFrame, raceDurationMs } from "./race-anim";
 import type { RaceScript } from "../shared/protocol";
-import { DEFAULT_HORSE_IMAGE, DUST_IMAGE } from "./assets";
+import { DEFAULT_HORSE_IMAGE } from "./assets";
 
 const FINISH_PAD = 40;   // right padding before finish line
 
@@ -33,7 +33,6 @@ export function canvasMetrics(width: number, height: number, laneCount: number):
 export class RaceCanvas {
   private ctx: CanvasRenderingContext2D;
   private images = new Map<number, HTMLImageElement>();
-  private dustImg: HTMLImageElement;
   private script: RaceScript | null = null;
   private startAt = 0;
   private finishedCb: (lanes: number[]) => void = () => {};
@@ -51,8 +50,6 @@ export class RaceCanvas {
       img.src = lane.image || DEFAULT_HORSE_IMAGE;
       this.images.set(lane.lane, img);
     }
-    this.dustImg = new Image();
-    this.dustImg.src = DUST_IMAGE;
   }
 
   onFinishedChange(cb: (lanes: number[]) => void): void { this.finishedCb = cb; }
@@ -151,18 +148,25 @@ export class RaceCanvas {
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
 
-      // Dust burst: a scaled-down dust sprite kicked up behind the horse,
-      // aligned with the bottom-left corner of the horse image.
+      // Dust: a puff of low-opacity brown circles kicked up behind the horse,
+      // small near the hooves (right) growing larger as they trail off left.
       const x = trackStart + f.progress * trackLen;
-      if (f.dust && this.dustImg.complete && this.dustImg.naturalWidth) {
-        const dw = m.horsePx * 0.8;
-        const dh = dw * (this.dustImg.naturalHeight / this.dustImg.naturalWidth);
+      if (f.dust) {
         const horseLeft = x - m.horsePx / 2;
-        const horseBottom = y + m.horsePx / 2;
-        const dustX = horseLeft - dw * 0.7;  // trails behind (to the left)
-        const dustY = horseBottom - dh;      // bottom aligned with the horse
-        ctx.globalAlpha = 0.85;
-        ctx.drawImage(this.dustImg, dustX, dustY, dw, dh);
+        const groundY = y + m.horsePx / 2; // near the horse's feet
+        const puffs = 6;
+        const jitter = [0, -0.14, 0.1, -0.06, 0.14, -0.1]; // fixed, so it doesn't flicker
+        ctx.fillStyle = "#9b7748"; // brown
+        for (let i = 0; i < puffs; i++) {
+          const t = i / (puffs - 1);                 // 0 = near horse, 1 = far tail
+          const r = m.horsePx * (0.1 + 0.3 * t);     // small right -> large left
+          const cx = horseLeft - m.horsePx * 0.1 - t * m.horsePx * 0.95;
+          const cy = groundY - r * 0.5 + jitter[i] * m.horsePx;
+          ctx.globalAlpha = 0.22 * (1 - 0.35 * t);   // low opacity, fading toward the tail
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
         ctx.globalAlpha = 1;
       }
 
