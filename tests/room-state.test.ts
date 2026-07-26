@@ -42,6 +42,15 @@ describe("room-state", () => {
     expect(res.state.lanes[0].claimedBy).toBe("a");
   });
 
+  it("allows a submit with no image (image is optional)", () => {
+    let s = addConnection(initialRoomState(), "a");
+    s = claimLane(s, "a", 0).state;
+    const res = submitHorse(s, "a", 0, "Comet", "Spencer", "");
+    expect(res.error).toBeUndefined();
+    expect(res.state.lanes[0].filled).toBe(true);
+    expect(res.state.lanes[0].image).toBe("");
+  });
+
   it("rejects submit from a non-claimer", () => {
     let s = addConnection(addConnection(initialRoomState(), "a"), "b");
     s = claimLane(s, "a", 0).state;

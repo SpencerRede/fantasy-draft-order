@@ -1,14 +1,11 @@
 import type { Horse } from "../shared/protocol";
-
-// Polyfill crypto for Node.js environments
-if (typeof crypto === "undefined" && typeof global !== "undefined") {
-  (global as any).crypto = require("crypto").webcrypto;
-}
+import { DEFAULT_HORSE_IMAGE } from "./assets";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
 
 export function generateRoomCode(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(4));
+  // globalThis.crypto is the Web Crypto API — present in browsers and Node 18+.
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(4));
   return Array.from(bytes, (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join("");
 }
 
@@ -38,7 +35,7 @@ export function renderResults(
     li.className = "results__row";
     li.innerHTML = `
       <span class="results__rank">${rank}</span>
-      ${horse.image ? `<img class="results__img" src="${escapeHtml(horse.image)}" alt="" />` : ""}
+      <img class="results__img" src="${escapeHtml(horse.image || DEFAULT_HORSE_IMAGE)}" alt="" />
       <span class="results__names">
         <span class="results__horse">${escapeHtml(horse.horseName)}</span>
         <span class="results__person">${escapeHtml(horse.personName)}</span>
