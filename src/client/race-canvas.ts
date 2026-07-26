@@ -90,10 +90,9 @@ export class RaceCanvas {
 
     const laneCount = this.lanes.length;
     const m = canvasMetrics(width, height, laneCount);
-    const trackStart = m.gutter;
+    // Horses start at the far left; +horsePx/2 keeps the token fully on-screen.
+    const trackStart = m.horsePx / 2 + 4;
     const trackEnd = width - FINISH_PAD;
-    const thumbX = 6;
-    const nameX = thumbX + m.thumbPx + 6;
     const trackLen = trackEnd - trackStart;
     const laneH = height / laneCount;
     const frame = computeRaceFrame(this.script!, elapsed);
@@ -123,15 +122,13 @@ export class RaceCanvas {
       const horse = this.lanes[lane];
       const f = frame.lanes[lane];
 
-      // Gutter: thumbnail + name (name truncated to fit the gutter width).
       const img = this.images.get(lane);
-      if (img?.complete && img.naturalWidth) {
-        ctx.drawImage(img, thumbX, y - m.thumbPx / 2, m.thumbPx, m.thumbPx);
-      }
+
+      // Lane name: white, top-left of the lane, shadowed for legibility.
       ctx.fillStyle = "#fff";
       ctx.font = `bold ${m.gutterFont}px system-ui, sans-serif`;
-      ctx.textBaseline = "middle";
-      const maxNameW = Math.max(8, m.gutter - nameX - 4);
+      ctx.textBaseline = "top";
+      const maxNameW = Math.max(40, width * 0.35);
       let name = horse.horseName || `Lane ${lane + 1}`;
       if (ctx.measureText(name).width > maxNameW) {
         while (name.length > 1 && ctx.measureText(name + "…").width > maxNameW) {
@@ -139,11 +136,10 @@ export class RaceCanvas {
         }
         name += "…";
       }
-      // Drop shadow keeps the white name legible over the bright grass.
-      ctx.shadowColor = "rgba(0,0,0,0.6)";
+      ctx.shadowColor = "rgba(0,0,0,0.7)";
       ctx.shadowBlur = 3;
       ctx.shadowOffsetY = 1;
-      ctx.fillText(name, nameX, y);
+      ctx.fillText(name, 6, lane * laneH + 4);
       ctx.shadowColor = "transparent";
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
