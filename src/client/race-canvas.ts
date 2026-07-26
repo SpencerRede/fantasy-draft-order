@@ -90,8 +90,6 @@ export class RaceCanvas {
     const { width, height } = this.canvas;
     const ctx = this.ctx;
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = "#0b0b0b";
-    ctx.fillRect(0, 0, width, height);
 
     const laneCount = this.lanes.length;
     const m = canvasMetrics(width, height, laneCount);
@@ -100,7 +98,19 @@ export class RaceCanvas {
     const thumbX = 6;
     const nameX = thumbX + m.thumbPx + 6;
     const trackLen = trackEnd - trackStart;
+    const laneH = height / laneCount;
     const frame = computeRaceFrame(this.script!, elapsed);
+
+    // Turf: alternating mowed-grass greens per lane.
+    const GRASS = ["#4f8f43", "#3f7a35"]; // light, slightly darker
+    for (let lane = 0; lane < laneCount; lane++) {
+      ctx.fillStyle = GRASS[lane % 2];
+      ctx.fillRect(0, lane * laneH, width, laneH);
+    }
+    // White picket fences separating each lane (near-top-down ~70° view).
+    for (let b = 1; b < laneCount; b++) {
+      this.drawFence(b * laneH, width, laneH);
+    }
 
     // Finish line.
     ctx.strokeStyle = "#fff";
@@ -115,13 +125,6 @@ export class RaceCanvas {
       const y = laneY(lane, height, laneCount);
       const horse = this.lanes[lane];
       const f = frame.lanes[lane];
-
-      // Lane separators.
-      ctx.strokeStyle = "#222";
-      ctx.beginPath();
-      ctx.moveTo(0, y + height / laneCount / 2);
-      ctx.lineTo(width, y + height / laneCount / 2);
-      ctx.stroke();
 
       // Gutter: thumbnail + name (name truncated to fit the gutter width).
       const img = this.images.get(lane);
@@ -139,7 +142,14 @@ export class RaceCanvas {
         }
         name += "…";
       }
+      // Drop shadow keeps the white name legible over the bright grass.
+      ctx.shadowColor = "rgba(0,0,0,0.6)";
+      ctx.shadowBlur = 3;
+      ctx.shadowOffsetY = 1;
       ctx.fillText(name, nameX, y);
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
 
       // Dust burst: a scaled-down dust sprite kicked up behind the horse,
       // aligned with the bottom-left corner of the horse image.
@@ -165,6 +175,49 @@ export class RaceCanvas {
         ctx.arc(x, y, m.horsePx / 2, 0, Math.PI * 2);
         ctx.fill();
       }
+    }
+  }
+
+  // A low white picket fence along a lane boundary, drawn as if viewed from
+  // ~70° above: short pointed pickets standing just above the boundary line,
+  // two horizontal rails, and a soft ground shadow below for depth.
+  private drawFence(yBoundary: number, width: number, laneH: number): void {
+    const ctx = this.ctx;
+    const pickH = Math.max(5, Math.min(14, laneH * 0.22));
+    const pickW = 3;
+    const spacing = 14;
+    const railTop = yBoundary - pickH;
+
+    // Ground shadow just below the fence.
+    ctx.strokeStyle = "rgba(0,0,0,0.22)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, yBoundary + 2);
+    ctx.lineTo(width, yBoundary + 2);
+    ctx.stroke();
+
+    // Two horizontal rails (upper rail + one on the boundary).
+    ctx.strokeStyle = "#eef0e8";
+    ctx.lineWidth = Math.max(1.5, pickH * 0.16);
+    ctx.beginPath();
+    ctx.moveTo(0, railTop + pickH * 0.4);
+    ctx.lineTo(width, railTop + pickH * 0.4);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, yBoundary);
+    ctx.lineTo(width, yBoundary);
+    ctx.stroke();
+
+    // Evenly spaced pointed pickets.
+    ctx.fillStyle = "#f6f7f1";
+    for (let x = spacing / 2; x < width; x += spacing) {
+      ctx.fillRect(x - pickW / 2, railTop, pickW, pickH);
+      ctx.beginPath();
+      ctx.moveTo(x - pickW / 2, railTop);
+      ctx.lineTo(x, railTop - pickH * 0.4);
+      ctx.lineTo(x + pickW / 2, railTop);
+      ctx.closePath();
+      ctx.fill();
     }
   }
 }
