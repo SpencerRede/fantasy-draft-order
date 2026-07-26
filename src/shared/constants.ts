@@ -2,10 +2,11 @@ export const LANE_COUNT = 12;
 export const TRACK_LENGTH_UNITS = 1270;
 export const TICKS_PER_ROUND = 5;
 
-// Roll = randInt(ROLL_MIN, ROLL_MAX) * 2  →  {10,12,14,16,18,20}
-export const ROLL_MIN = 5;
-export const ROLL_MAX = 10;
-export const DUST_THRESHOLD = 15; // roll > this spawns dust
+// Roll = randInt(ROLL_MIN, ROLL_MAX) * 2  →  {2,4,…,30}. Wide spread so a horse
+// can barely move (2) or surge ahead (30) on any given round.
+export const ROLL_MIN = 1;
+export const ROLL_MAX = 15;
+export const DUST_THRESHOLD = 15; // roll > this spawns dust (the bigger bursts)
 
 // Animation timing (client only; tuned for ~30-45s race).
 export const TICK_MS = 60;
