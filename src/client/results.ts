@@ -1,4 +1,5 @@
 import type { Horse } from "../shared/protocol";
+import { DEFAULT_HORSE_IMAGE } from "./assets";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
 
@@ -34,7 +35,7 @@ export function renderResults(
     li.className = "results__row";
     li.innerHTML = `
       <span class="results__rank">${rank}</span>
-      ${horse.image ? `<img class="results__img" src="${escapeHtml(horse.image)}" alt="" />` : ""}
+      <img class="results__img" src="${escapeHtml(horse.image || DEFAULT_HORSE_IMAGE)}" alt="" />
       <span class="results__names">
         <span class="results__horse">${escapeHtml(horse.horseName)}</span>
         <span class="results__person">${escapeHtml(horse.personName)}</span>

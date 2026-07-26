@@ -1,6 +1,7 @@
 import type { Horse } from "../shared/protocol";
 import { computeRaceFrame, raceDurationMs } from "./race-anim";
 import type { RaceScript } from "../shared/protocol";
+import { DEFAULT_HORSE_IMAGE, DUST_IMAGE } from "./assets";
 
 const FINISH_PAD = 40;   // right padding before finish line
 
@@ -32,6 +33,7 @@ export function canvasMetrics(width: number, height: number, laneCount: number):
 export class RaceCanvas {
   private ctx: CanvasRenderingContext2D;
   private images = new Map<number, HTMLImageElement>();
+  private dustImg: HTMLImageElement;
   private script: RaceScript | null = null;
   private startAt = 0;
   private finishedCb: (lanes: number[]) => void = () => {};
@@ -43,13 +45,14 @@ export class RaceCanvas {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas 2d unsupported");
     this.ctx = ctx;
+    // Every lane gets an image: the player's upload, or the default horse.
     for (const lane of lanes) {
-      if (lane.image) {
-        const img = new Image();
-        img.src = lane.image;
-        this.images.set(lane.lane, img);
-      }
+      const img = new Image();
+      img.src = lane.image || DEFAULT_HORSE_IMAGE;
+      this.images.set(lane.lane, img);
     }
+    this.dustImg = new Image();
+    this.dustImg.src = DUST_IMAGE;
   }
 
   onFinishedChange(cb: (lanes: number[]) => void): void { this.finishedCb = cb; }
@@ -138,14 +141,18 @@ export class RaceCanvas {
       }
       ctx.fillText(name, nameX, y);
 
-      // Dust burst.
+      // Dust burst: a scaled-down dust sprite kicked up behind the horse,
+      // aligned with the bottom-left corner of the horse image.
       const x = trackStart + f.progress * trackLen;
-      if (f.dust) {
-        ctx.globalAlpha = 0.5;
-        ctx.fillStyle = "#caa26a";
-        ctx.beginPath();
-        ctx.arc(x - m.horsePx / 2 - 8, y + 8, 10, 0, Math.PI * 2);
-        ctx.fill();
+      if (f.dust && this.dustImg.complete && this.dustImg.naturalWidth) {
+        const dw = m.horsePx * 0.8;
+        const dh = dw * (this.dustImg.naturalHeight / this.dustImg.naturalWidth);
+        const horseLeft = x - m.horsePx / 2;
+        const horseBottom = y + m.horsePx / 2;
+        const dustX = horseLeft - dw * 0.7;  // trails behind (to the left)
+        const dustY = horseBottom - dh;      // bottom aligned with the horse
+        ctx.globalAlpha = 0.85;
+        ctx.drawImage(this.dustImg, dustX, dustY, dw, dh);
         ctx.globalAlpha = 1;
       }
 

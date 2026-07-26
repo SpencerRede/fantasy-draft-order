@@ -1,5 +1,6 @@
 import type { Horse } from "../shared/protocol";
 import { resizeImageFile } from "./image-resize";
+import { DEFAULT_HORSE_IMAGE } from "./assets";
 
 export type LaneStatus = "yours" | "filled" | "claimed" | "open";
 
@@ -126,7 +127,8 @@ function buildLaneCard(horse: Horse, h: LobbyHandlers): HTMLElement {
   }
 
   if (status === "yours") {
-    const currentImage = pendingImages.get(horse.lane) ?? horse.image;
+    // Show the player's image if they have one, otherwise the default horse.
+    const currentImage = pendingImages.get(horse.lane) ?? horse.image ?? DEFAULT_HORSE_IMAGE;
     card.innerHTML = `<span class="lane-card__num">Lane ${horse.lane + 1} — yours</span>`;
     const form = document.createElement("form");
     form.className = "lane-form";
@@ -167,13 +169,9 @@ function buildLaneCard(horse: Horse, h: LobbyHandlers): HTMLElement {
     form.onsubmit = (e) => {
       e.preventDefault();
       const data = new FormData(form);
-      // Read the persisted image, never the transient file input.
-      const image = pendingImages.get(horse.lane) ?? horse.image;
-      if (!image) {
-        err.hidden = false;
-        err.textContent = "An image is required";
-        return;
-      }
+      // Image is optional. Read the persisted image (never the transient file
+      // input); send "" when none, and the lane renders the default horse.
+      const image = pendingImages.get(horse.lane) ?? horse.image ?? "";
       h.onSubmit(horse.lane, String(data.get("horse")), String(data.get("person")), image);
     };
 
@@ -188,7 +186,7 @@ function buildLaneCard(horse: Horse, h: LobbyHandlers): HTMLElement {
   // claimed by other / filled by other
   card.innerHTML = `
     <span class="lane-card__num">Lane ${horse.lane + 1}</span>
-    ${horse.filled && horse.image ? `<img class="lane-card__img" src="${escapeHtml(horse.image)}" alt="" />` : ""}
+    ${horse.filled ? `<img class="lane-card__img" src="${escapeHtml(horse.image || DEFAULT_HORSE_IMAGE)}" alt="" />` : ""}
     <span class="lane-card__status">${horse.filled ? escapeHtml(horse.horseName) : "Claimed…"}</span>`;
   return card;
 }

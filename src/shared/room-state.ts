@@ -69,9 +69,10 @@ export function submitHorse(
   const target = s.lanes[lane];
   if (!target) return { state: s, error: "Invalid lane" };
   if (target.claimedBy !== id) return { state: s, error: "You do not own this lane" };
-  if (!horseName.trim() || !personName.trim() || !image) {
-    return { state: s, error: "Horse name, person name, and image are required" };
+  if (!horseName.trim() || !personName.trim()) {
+    return { state: s, error: "Horse name and person name are required" };
   }
+  // Image is optional — a lane with no image renders a default horse.
   const next = clone(s);
   const l = next.lanes[lane];
   l.horseName = horseName.trim();
