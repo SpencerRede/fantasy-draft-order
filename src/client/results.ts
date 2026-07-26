@@ -1,14 +1,10 @@
 import type { Horse } from "../shared/protocol";
 
-// Polyfill crypto for Node.js environments
-if (typeof crypto === "undefined" && typeof global !== "undefined") {
-  (global as any).crypto = require("crypto").webcrypto;
-}
-
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
 
 export function generateRoomCode(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(4));
+  // globalThis.crypto is the Web Crypto API — present in browsers and Node 18+.
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(4));
   return Array.from(bytes, (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join("");
 }
 
